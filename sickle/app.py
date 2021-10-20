@@ -203,4 +203,5 @@ class Sickle(object):
 
     @staticmethod
     def _is_error_code(status_code):
+        print(status_code)
         return status_code >= 400
