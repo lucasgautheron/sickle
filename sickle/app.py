@@ -121,9 +121,9 @@ class Sickle(object):
         """
         http_response = self._request(kwargs)
         for _ in range(self.max_retries):
+            self.retry_after = self.get_retry_after(http_response)
             if self._is_error_code(http_response.status_code) \
                     and http_response.status_code in self.retry_status_codes:
-                self.retry_after = self.get_retry_after(http_response)
                 logger.warning(
                     "HTTP %d! Retrying after %d seconds..." % (http_response.status_code, self.retry_after))
                 time.sleep(self.retry_after)
@@ -196,12 +196,10 @@ class Sickle(object):
         return self.iterator(self, params)
 
     def get_retry_after(self, http_response):
-        if http_response.status_code == 503:
-            try:
-                return int(http_response.headers.get('retry-after'))
-            except TypeError:
-                return self.default_retry_after
-        return self.default_retry_after
+        try:
+            return int(http_response.headers.get('retry-after'))
+        except TypeError:
+            return self.default_retry_after
 
     @staticmethod
     def _is_error_code(status_code):
