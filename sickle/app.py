@@ -111,6 +111,7 @@ class Sickle(object):
         self.class_mapping = class_mapping or DEFAULT_CLASS_MAP
         self.encoding = encoding
         self.request_args = request_args
+        self.retry_after = None
 
     def harvest(self, **kwargs):  # pragma: no cover
         """Make HTTP requests to the OAI server.
@@ -122,10 +123,10 @@ class Sickle(object):
         for _ in range(self.max_retries):
             if self._is_error_code(http_response.status_code) \
                     and http_response.status_code in self.retry_status_codes:
-                retry_after = self.get_retry_after(http_response)
+                self.retry_after = self.get_retry_after(http_response)
                 logger.warning(
-                    "HTTP %d! Retrying after %d seconds..." % (http_response.status_code, retry_after))
-                time.sleep(retry_after)
+                    "HTTP %d! Retrying after %d seconds..." % (http_response.status_code, self.retry_after))
+                time.sleep(self.retry_after)
                 http_response = self._request(kwargs)
         http_response.raise_for_status()
         if self.encoding:
